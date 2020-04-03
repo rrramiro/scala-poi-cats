@@ -1,6 +1,6 @@
 package info.folone.scala.poi
 
 sealed abstract class WorkbookVersion
-case object HSSF extends WorkbookVersion
-case object XSSF extends WorkbookVersion
-case object SXSSF extends WorkbookVersion
+final case object HSSF  extends WorkbookVersion
+final case object XSSF  extends WorkbookVersion
+final case object SXSSF extends WorkbookVersion

@@ -1,47 +1,82 @@
 package info.folone.scala.poi
-
+import monocle.state.all._
+import monocle.Lens
+import cats.implicits._
+import monocle.Getter
+import monocle.macros.GenLens
 import org.specs2.mutable._
+
+import eu.timepit.refined._
+import eu.timepit.refined.auto._
 
 class PoiLensesSpec extends Specification {
   "Lenses on poi classes" should {
     "cellLens getter" >> {
-      stringCellLens.get(StringCell(1, "data")) must beEqualTo("data")
+      stringCellLens.get(StringCell("data")) must beEqualTo("data")
     }
-    "cellLens setter" >> {
-      stringCellLens.set(StringCell(1, "data"), "newData") must beEqualTo(StringCell(1, "newData"))
-    }
-    "rowLens contains" >> {
-      rowLens.contains(StringCell(2, "data1")).get(Row(1)(Set(StringCell(1,"data"), StringCell(2, "data1")))) must beTrue
-    }
-    "rowLens does not contain" >> {
-      rowLens.contains(StringCell(2, "data1")).get(Row(1)(Set(StringCell(1,"data"), StringCell(2, "data")))) must beFalse
-    }
-    "rowLens +=" >> {
-      (rowLens += StringCell(2, "data1")).run(Row(1)(Set(StringCell(1, "data"), StringCell(3, "data3")))) mustEqual
-      (Row(1)
-       (Set(StringCell(1,"data"), StringCell(3, "data3"), StringCell(2, "data1"))),
-       Set(StringCell(1, "data"), StringCell(3, "data3"), StringCell(2, "data1")))
-    }
-    "rowLens &=" >> {
-      (rowLens &= Set(StringCell(2, "data1"))).run(Row(1)(Set(StringCell(1, "data"), StringCell(2, "data1")))) mustEqual
-      (Row(1)(Set(StringCell(2, "data1"))),Set(StringCell(2, "data1")))
-    }
-    "rowLens &~=" >> {
-      (rowLens &~= Set(StringCell(2, "data1"))).run(Row(1)(Set(StringCell(1, "data"), StringCell(2, "data1")))) mustEqual
-      (Row(1)(Set(StringCell(1, "data"))),Set(StringCell(1, "data")))
-    }
-    "rowLens |=" >> {
-      (rowLens |= Set(StringCell(2, "data1"))).run(Row(1)(Set(StringCell(1, "data"), StringCell(2, "data1")))) mustEqual
-      (Row(1)(Set(StringCell(1, "data"), StringCell(2, "data1"))),Set(StringCell(1, "data"), StringCell(2, "data1")))
 
-      (rowLens |= Set(StringCell(2, "data1"))).run(Row(1)(Set(StringCell(1, "data"), StringCell(2, "data2")))) mustEqual
-      (Row(1)
-       (Set(StringCell(1, "data"), StringCell(2, "data2"), StringCell(2, "data1"))),
-       Set(StringCell(1, "data"), StringCell(2, "data2"), StringCell(2, "data1")))
+    "cellLens setter" >> {
+      stringCellLens.set("newData")(StringCell("data")) must beEqualTo(StringCell("newData"))
     }
+
+    "rowLens contains" >> {
+      val row: Row = Row(Map((1: Pos) -> StringCell("data"), (2: Pos) -> StringCell("data1")))
+      rowLens.contains(row)((2: Pos) -> StringCell("data1")) must beTrue
+    }
+
+    "rowLens does not contain" >> {
+      val row: Row = Row(Map((1: Pos) -> StringCell("data"), (2: Pos) -> StringCell("data")))
+      rowLens.contains(row)((2: Pos) -> StringCell("data1")) must beFalse
+    }
+
+    "rowLens +=" >> {
+      val row: Row = Row(Map((1: Pos) -> StringCell("data"), (3: Pos) -> StringCell("data3")))
+
+      (rowLens += ((2: Pos) -> StringCell("data1"))).run(row).value mustEqual (Row(
+        Map(
+          (1: Pos) -> StringCell("data"),
+          (3: Pos) -> StringCell("data3"),
+          (2: Pos) -> StringCell("data1")
+        )
+      ), ())
+    }
+
+    "rowLens &=" >> {
+      (rowLens &= ((2: Pos) -> StringCell("data1")))
+        .run(Row(Map((1: Pos) -> StringCell("data"), (2: Pos) -> StringCell("data1"))))
+        .value mustEqual (Row(Map((2: Pos) -> StringCell("data1"))), ())
+    }
+
+    "rowLens &~=" >> {
+      (rowLens &~= ((2: Pos) -> StringCell("data1")))
+        .run(Row(Map((1: Pos) -> StringCell("data"), (2: Pos) -> StringCell("data1"))))
+        .value mustEqual
+        (Row(Map((1: Pos) -> StringCell("data"))), ())
+    }
+
+    "rowLens |=" >> {
+      (rowLens |= ((2: Pos) -> StringCell("data1")))
+        .run(Row(Map((1: Pos) -> StringCell("data"), (2: Pos) -> StringCell("data1"))))
+        .value mustEqual
+        (Row(Map((1: Pos) -> StringCell("data"), (2: Pos) -> StringCell("data1"))), ())
+
+      (rowLens |= ((3: Pos) -> StringCell("data1")))
+        .run(Row(Map((1: Pos) -> StringCell("data"), (2: Pos) -> StringCell("data2"))))
+        .value mustEqual
+        (Row(
+          Map(
+            (1: Pos) -> StringCell("data"),
+            (2: Pos) -> StringCell("data2"),
+            (3: Pos) -> StringCell("data1")
+          )
+        ), ())
+    }
+
     "rowLens -=" >> {
-      (rowLens -= StringCell(2, "data1")).run(Row(1)(Set(StringCell(1, "data"), StringCell(2, "data1")))) mustEqual
-      (Row(1)(Set(StringCell(1, "data"))), Set(StringCell(1, "data")))
+      (rowLens -= StringCell("data1"))
+        .run(Row(Map((1: Pos) -> StringCell("data"), (2: Pos) -> StringCell("data1"))))
+        .value mustEqual (Row(Map((1: Pos) -> StringCell("data"))), ())
     }
+
   }
 }

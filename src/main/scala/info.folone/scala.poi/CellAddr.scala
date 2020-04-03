@@ -1,3 +1,3 @@
 package info.folone.scala.poi
 
-case class CellAddr(sheet: String, row: Int, col: Int)
+final case class CellAddr(sheet: String, row: Pos, col: Pos)

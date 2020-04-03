@@ -1,31 +1,18 @@
 package info.folone.scala.poi
 
-import org.apache.poi.hssf.usermodel.HSSFFont.FONT_ARIAL
-import org.apache.poi.ss.usermodel.{Font => POIFont, DataFormat => POIDataFormat}
+trait FontColor
 
-case class CellStyle(font: Font, dataFormat: DataFormat)
-
-case class Font(
-  name: String  = FONT_ARIAL,
-  bold: Boolean = false,
-  color: Short  = POIFont.COLOR_NORMAL ) {
-
-  def appliedTo(pf: POIFont): POIFont = {
-    pf setFontName   name
-    pf setBoldweight boldweight
-    pf setColor      color
-    pf
-  }
-
-  private def boldweight = if (bold) POIFont.BOLDWEIGHT_BOLD else POIFont.BOLDWEIGHT_NORMAL
+object FontColor {
+  case object Normal extends FontColor
+  case object Red    extends FontColor
 }
 
-case class DataFormat(
-  format: String ) {
+final case class CellStyle(font: Font, dataFormat: DataFormat)
 
-  def appliedTo(poiDataFormat: POIDataFormat): Short = {
-    poiDataFormat.getFormat(format)
-  }
+final case class Font(name: String = Font.defaultFontName, bold: Boolean = false, color: FontColor)
+
+object Font {
+  def defaultFontName: String = "Arial"
 }
 
-
+final case class DataFormat(format: String)
